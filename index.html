@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Genesis Clock</title>
+<style>
+  /* Estilo base inspirado em monitores CRT fósforo verde */
+  body {
+    font-family: "Courier New", monospace;
+    background-color: #0c0c0c; /* cinza muito escuro */
+    color: #00ff66; /* verde fósforo */
+    text-align: center;
+    padding: 5%;
+    text-shadow: 0 0 6px #00ff66a0; /* leve brilho fosforescente */
+    position: relative;
+    overflow-y: auto;
+  }
+
+  /* Simulação de linhas horizontais do CRT */
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0.15) 2px
+    );
+    pointer-events: none;
+    opacity: 0.25;
+  }
+
+  h1 {
+    color: #00ff99;
+    text-shadow: 0 0 10px #00ff66;
+  }
+
+  p {
+    color: #80ffb0;
+    max-width: 700px;
+    margin: auto;
+    line-height: 1.6em;
+    text-shadow: 0 0 4px #00ff6630;
+  }
+
+  .clock-container {
+    display: inline-block;
+    text-align: left;
+    margin-top: 30px;
+    border: 1px solid #00ff66;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #00ff6640 inset;
+  }
+
+  .label {
+    color: #33ff88;
+  }
+
+  .calc-container {
+    margin-top: 40px;
+    background: rgba(0, 255, 102, 0.05);
+    padding: 20px 25px;
+    border: 1px solid #00ff66;
+    border-radius: 8px;
+    display: inline-block;
+    text-align: left;
+    box-shadow: 0 0 12px #00ff6630 inset;
+  }
+
+  input {
+    background: #0c0c0c;
+    color: #00ff66;
+    border: 1px solid #00ff66;
+    padding: 6px;
+    width: 240px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    font-family: monospace;
+    text-shadow: 0 0 4px #00ff66a0;
+  }
+
+  button {
+    background: #00ff66;
+    color: #001000;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: monospace;
+    box-shadow: 0 0 6px #00ff6630;
+  }
+
+  button:hover {
+    background: #33ff99;
+    box-shadow: 0 0 8px #00ff66;
+  }
+
+  h2, h3 {
+    color: #66ff99;
+    text-shadow: 0 0 6px #00ff6640;
+  }
+</style>
+</head>
+<body>
+  <h1>Genesis Clock</h1>
+
+    <div class="clock-container">
+    <div><span class="label">Genesis Clock (décimos de s):</span> <span id="genesis-clock"></span></div>
+    <div><span class="label">Genesis Clock (anos desde o Big Bang):</span> <span id="genesis-years"></span></div>
+    <div><span class="label">Unix Epoch (s):</span> <span id="epoch-time"></span></div>
+    <div><span class="label">Data e Hora (UTC):</span> <span id="human-time"></span></div>
+  </div>
+
+  <div class="calc-container">
+    <h2>Calculadora Temporal</h2>
+
+    <h3>Epoch → Data</h3>
+    <input type="number" id="input-epoch" placeholder="Digite o Unix Epoch (s)">
+    <button onclick="epochToDate()">Converter</button>
+    <div><span class="label">Resultado:</span> <span id="epoch-result"></span></div>
+
+    <h3>Data → Epoch</h3>
+    <input type="datetime-local" id="input-date">
+    <button onclick="dateToEpoch()">Converter</button>
+    <div><span class="label">Resultado:</span> <span id="date-result"></span></div>
+  </div>
+
+  <p>
+    O <strong>Genesis Clock</strong> representa o tempo decorrido desde o início do universo, 
+    aproximadamente <strong>13,8 bilhões de anos</strong> atrás, expresso em décimos de segundo.  
+    É uma escala cósmica hipotética que sincroniza o tempo universal com o <em>Unix Epoch</em> — 
+    o ponto de partida dos sistemas computacionais modernos (01/01/1970 UTC).
+  </p>
+  <p>
+    O <strong>Unix Epoch</strong> conta o número de segundos desde 1970, sendo a base do tempo digital.  
+    Já o <strong>calendário humano</strong> converte esse valor para uma data compreensível (dia, mês, ano, hora, minuto, segundo).
+  </p>
+  <p> <a href="https://github.com/profedney/genesis_clock" target="_blank" rel="noopener noreferrer">Codigo fonte</a> </p>
+
+  <script>
+    // Constantes cosmológicas aproximadas
+    const UNIVERSE_AGE_SECONDS = 4.354e17; // 13,8 bilhões de anos em segundos
+    const SECONDS_PER_YEAR = 365.25 * 24 * 3600;
+    const GENESIS_BASE = "43500000"; // Parte fixa da base (4,35 × 10^17 sem 10 zeros)
+
+    function updateGenesisClock() {
+      const nowUnixMs = Date.now(); // tempo atual em milissegundos desde 1970
+      const unixSeconds = Math.floor(nowUnixMs / 1000);
+      const unixTenths = Math.floor(nowUnixMs / 100); // décimos de segundo
+
+      // Concatena parte fixa com o tempo atual em décimos
+      const genesisClock = GENESIS_BASE + unixTenths.toString();
+
+      // Calcula idade total do universo em segundos
+      const totalGenesisSeconds = parseFloat(GENESIS_BASE + (unixSeconds).toString());
+      const ageYears = (totalGenesisSeconds / SECONDS_PER_YEAR).toExponential(6);
+
+      // Formata data legível
+      const date = new Date(unixSeconds * 1000);
+      const formatted = date.toLocaleString("pt-BR", { timeZone: "UTC" });
+
+      // Atualiza exibição
+      document.getElementById("genesis-clock").textContent = genesisClock;
+      document.getElementById("genesis-years").textContent = `${ageYears} anos`;
+      document.getElementById("epoch-time").textContent = unixSeconds;
+      document.getElementById("human-time").textContent = formatted + " UTC";
+    }
+
+    // Conversões manuais
+    function epochToDate() {
+      const epoch = parseInt(document.getElementById("input-epoch").value);
+      if (isNaN(epoch)) return alert("Insira um valor Epoch válido.");
+      const date = new Date(epoch * 1000);
+      document.getElementById("epoch-result").textContent = date.toLocaleString("pt-BR", { timeZone: "UTC" }) + " UTC";
+    }
+
+    function dateToEpoch() {
+      const dateStr = document.getElementById("input-date").value;
+      if (!dateStr) return alert("Selecione uma data e hora.");
+      const date = new Date(dateStr + "Z"); // UTC
+      const epoch = Math.floor(date.getTime() / 1000);
+      document.getElementById("date-result").textContent = epoch + " segundos";
+    }
+
+    // Atualização automática
+    updateGenesisClock();
+    setInterval(updateGenesisClock, 100);
+  </script>
+</body>
+</html>
